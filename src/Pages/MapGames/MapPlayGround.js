@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GoogleMap, useJsApiLoader,Marker } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader,Marker, InfoWindow } from '@react-google-maps/api';
 
 const containerStyle = {
     width: '1000px',
@@ -11,7 +11,7 @@ const containerStyle = {
     lng: 23.219772123743617
   };
 
-    const cities = [ 
+ const cities = [ 
    
     { 
    
@@ -95,11 +95,12 @@ const containerStyle = {
    
   
 const MapPlayGround = () => {
-  const [mark , setMark] = useState(center);
+  const [mark , setMark] = useState({});
   const [correct, setCorrect] = useState('');
   const [mainD, setMainD] = useState(1500);
   const [distance, setDistance] = useState('');
-  const [markArr, setMarkArr] = useState([])
+  const [dMark, setDmark] = useState({})
+  let R = 6371;
 
     const { isLoaded } = useJsApiLoader({
         googleMapsApiKey: process.env.GOOGLE_MAP_API_KEY
@@ -108,44 +109,41 @@ const MapPlayGround = () => {
       return <h1>Loading</h1>
     }
 
+    
     const ClickHandler = (e) =>{
-
       const LatLangdata = JSON.stringify(e.toJSON(), null, 2)
       const LatLang = JSON.parse(LatLangdata)
       setMark(LatLang)
-      let R = 6371;
 
-      cities.forEach(city => {
+      for(const city of cities){
         let dLat = toRad(LatLang.lat - city.position.lat);
         let dLon = toRad(LatLang.lng - city.position.lng);
         let lat1 = toRad(city.position.lat);
         let lat2 = toRad(LatLang.lat);
-  
+        console.log('city', city)
         let a = Math.sin(dLat/2) * Math.sin(dLat/2) +
           Math.sin(dLon/2) * Math.sin(dLon/2) * Math.cos(lat1) * Math.cos(lat2); 
           let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
           let d = R * c;
           const dimension = parseInt(d)
-          if(dimension >= 50){
+          if(dimension > 50){
             setDistance(`The distance Between Two city is ${dimension} Km`)
               setMainD(mainD - dimension)
-              setMarkArr([...markArr, city.position])
-              console.log('dukse', city.position)
+              setDmark(city.position)
+  
           }
           else if (dimension <= 50 ){
             setCorrect(`correct`)
-            console.log('correct')
           }
-      });
-}
+      }
+    }
 
     // Converts numeric degrees to radians
     const toRad = (Value) =>  
     {
         return Value * Math.PI / 180;
     }
-console.log('arr', markArr)
-console.log('mark', mark)
+
   return (
     <section className='game_container'>
         <div className='game_div'>
@@ -158,18 +156,16 @@ console.log('mark', mark)
                 <GoogleMap
                   mapContainerStyle={containerStyle}
                   center={center}
-                  zoom={2}
+                  zoom={5}
                   onClick={(e) => ClickHandler(e.latLng)}
-                >
-                  {
-                    markArr.length > 0 && 
-                      markArr.map(m => <Marker position={m}/>)
-                    
-                  }
-                 <Marker position={mark}/>
+                >                 
+                <Marker position={mark}/>
+                 
                 </GoogleMap>
             ) :  <h1>Loading....</h1>
           }
+
+       
         </div>
     </section>
   );
